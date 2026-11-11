@@ -22,16 +22,11 @@ jobs:
           pip install aqtinstall
           aqt install-qt linux desktop "$QT_VERSION" linux_gcc_64 -m qtmultimedia -O "$HOME/qt"
 
-      - name: Install OpenGL development files
-        # Qt Widgets links to libGL
-        timeout-minutes: 5
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgl-dev
-
       - name: Build
         run: |
           mkdir build
           cd build
-          "$HOME/qt/$QT_VERSION/gcc_64/bin/qmake" ../publictoiletmanager.pro
+          # The game does not use OpenGL, so do not link to libGL,
+          # which is not installed and cannot be installed with apt-get
+          "$HOME/qt/$QT_VERSION/gcc_64/bin/qmake" ../publictoiletmanager.pro QMAKE_LIBS_OPENGL=
           make -j4

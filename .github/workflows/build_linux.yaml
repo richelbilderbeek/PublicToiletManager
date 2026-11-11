@@ -22,6 +22,13 @@ jobs:
           pip install aqtinstall
           aqt install-qt linux desktop "$QT_VERSION" linux_gcc_64 -m qtmultimedia -O "$HOME/qt"
 
+      - name: Install OpenGL development files
+        # Qt Widgets links to libGL
+        timeout-minutes: 5
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgl-dev
+
       - name: Build
         run: |
           mkdir build

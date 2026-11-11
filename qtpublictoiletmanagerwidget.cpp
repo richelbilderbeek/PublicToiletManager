@@ -115,7 +115,7 @@ QFrame* createPanel(QWidget* parent, const QColor& colour)
 QCursor loadCursor(const QString& name)
 {
   QFile file(":/cursors/" + name);
-  file.open(QIODevice::ReadOnly);
+  if (!file.open(QIODevice::ReadOnly)) return QCursor(Qt::ArrowCursor);
   const QByteArray bytes = file.readAll();
   const QPixmap pixmap = QPixmap::fromImage(QImage::fromData(bytes, "CUR"));
   // The hotspot is in the first directory entry

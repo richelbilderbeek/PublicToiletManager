@@ -188,9 +188,6 @@
   <file alias="images/WCU16M.bmp">WCU16M.bmp</file>
   <file alias="cursors/build.cur">build.cur</file>
   <file alias="cursors/clean.cur">clean.cur</file>
-  <file alias="sounds/flush_0.wav">flush_0.wav</file>
-  <file alias="sounds/flush_1.wav">flush_1.wav</file>
-  <file alias="sounds/flush_2.wav">flush_2.wav</file>
   <file>PTM5icon.ico</file>
 </qresource>
 </RCC>

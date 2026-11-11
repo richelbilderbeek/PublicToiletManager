@@ -183,6 +183,7 @@ private:
   QLineEdit* m_rating_edit = nullptr;
   QLineEdit* m_klant_edit = nullptr;
 
+  // Unused in the web version
   QHash<QString, QSoundEffect*> m_sounds;
 
   void createControls();
@@ -211,8 +212,18 @@ private:
   void onLoadImageClick();
   void onCloseButtonClick();
 
-  /// The file the game is saved to
+  /// Web version only: give the keyboard focus to the game's web page element
+  void focusInBrowser();
+
+  /// Show a message without blocking
+  void showMessage(const QString& text);
+
+  /// The file the game is saved to, unused in the web version
   static QString saveFilename();
+  /// Save to the file, or to the browser's local storage in the web version
+  static bool writeSaveGame(const QString& text);
+  /// Returns an empty string if there is no saved game
+  static QString readSaveGame();
 };
 
 #endif // QTPUBLICTOILETMANAGERWIDGET_H

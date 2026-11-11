@@ -27,10 +27,38 @@
 #include <QPainter>
 #include <QProgressBar>
 #include <QRandomGenerator>
-#include <QSoundEffect>
 #include <QStandardPaths>
 #include <QStringList>
 #include <QTextStream>
+#include <QUrl>
+
+#ifdef Q_OS_WASM
+// Qt Multimedia is not available for WebAssembly:
+// the web version plays the sounds with the browser's Audio objects
+// and saves the game in the browser's local storage
+#include <emscripten/em_js.h>
+#include <emscripten/val.h>
+
+// In the web version, the keys only arrive if the window's focus helper
+// element has the browser's focus. Qt does not always give it the focus
+// (e.g. at startup, or after clicking on an already active window),
+// so do so here, also after each click. This uses the web page structure of Qt 6.11
+EM_JS(void, publictoiletmanager_focus_in_browser, (), {
+  function focusGame() {
+    var container = document.getElementById('qt-shadow-container');
+    if (!container || !container.shadowRoot) return;
+    var helper = container.shadowRoot.querySelector('.qt-window-focus-helper');
+    if (helper) helper.focus();
+  }
+  if (!window.publictoiletmanagerFocusListener) {
+    window.publictoiletmanagerFocusListener = true;
+    document.addEventListener('click', focusGame);
+  }
+  focusGame();
+});
+#else
+#include <QSoundEffect>
+#endif
 
 namespace {
 
@@ -152,17 +180,38 @@ QtPublicToiletManagerWidget::QtPublicToiletManagerWidget(QWidget* parent)
   createControls();
   initGame();
 
+#ifndef Q_OS_WASM
   for (const char* const name : { "flush_0.wav", "flush_1.wav", "flush_2.wav" })
   {
     QSoundEffect* const sound = new QSoundEffect(this);
     sound->setSource(QUrl("qrc:/sounds/" + QString(name)));
     m_sounds[name] = sound;
   }
+#endif
 
   connect(&m_central_timer, &QTimer::timeout, this, &QtPublicToiletManagerWidget::onCentralTimer);
   connect(&m_peoplemove_timer, &QTimer::timeout, this, &QtPublicToiletManagerWidget::onPeoplemoveTimer);
   m_central_timer.start(50);
   m_peoplemove_timer.start(350);
+
+  QTimer::singleShot(100, this, &QtPublicToiletManagerWidget::focusInBrowser);
+}
+
+//---------------------------------------------------------------------------
+void QtPublicToiletManagerWidget::focusInBrowser()
+{
+#ifdef Q_OS_WASM
+  publictoiletmanager_focus_in_browser();
+#endif
+}
+
+//---------------------------------------------------------------------------
+void QtPublicToiletManagerWidget::showMessage(const QString& text)
+{
+  // Not modal using exec, as that does not work in the web version
+  QMessageBox* const box = new QMessageBox(QMessageBox::Information, windowTitle(), text, QMessageBox::Ok, this);
+  box->setAttribute(Qt::WA_DeleteOnClose);
+  box->open();
 }
 
 //---------------------------------------------------------------------------
@@ -499,8 +548,17 @@ void QtPublicToiletManagerWidget::initGame()
 //---------------------------------------------------------------------------
 void QtPublicToiletManagerWidget::playSound(const QString& name)
 {
+#ifdef Q_OS_WASM
+  // The .wav files are in the 'sounds' folder next to the web page
+  using emscripten::val;
+  static val playing_sound = val::null();
+  if (!playing_sound.isNull()) playing_sound.call<void>("pause");
+  playing_sound = val::global("Audio").new_(val(("sounds/" + name).toStdString()));
+  playing_sound.call<val>("play");
+#else
   for (QSoundEffect* const sound : std::as_const(m_sounds)) sound->stop();
   if (m_sounds.contains(name)) m_sounds[name]->play();
+#endif
 }
 
 //---------------------------------------------------------------------------
@@ -1683,11 +1741,44 @@ void QtPublicToiletManagerWidget::onSpeedImageClick()
 }
 
 //---------------------------------------------------------------------------
+#ifdef Q_OS_WASM
+namespace {
+const char* const local_storage_key = "PublicToiletManager_SaveGame";
+}
+#endif
+
 QString QtPublicToiletManagerWidget::saveFilename()
 {
   const QString folder = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
   QDir().mkpath(folder);
   return folder + "/SaveGame.sav";
+}
+
+bool QtPublicToiletManagerWidget::writeSaveGame(const QString& text)
+{
+#ifdef Q_OS_WASM
+  emscripten::val::global("localStorage").call<void>("setItem", std::string(local_storage_key), text.toStdString());
+  return true;
+#else
+  QFile file(saveFilename());
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+  QTextStream out(&file);
+  out << text;
+  return true;
+#endif
+}
+
+QString QtPublicToiletManagerWidget::readSaveGame()
+{
+#ifdef Q_OS_WASM
+  const emscripten::val item = emscripten::val::global("localStorage").call<emscripten::val>("getItem", std::string(local_storage_key));
+  if (item.isNull() || item.isUndefined()) return QString();
+  return QString::fromStdString(item.as<std::string>());
+#else
+  QFile file(saveFilename());
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return QString();
+  return QTextStream(&file).readAll();
+#endif
 }
 
 void QtPublicToiletManagerWidget::onSaveImageClick()
@@ -1718,36 +1809,31 @@ void QtPublicToiletManagerWidget::onSaveImageClick()
   //Controleregel
   lines << "Game Loaded";
 
-  QFile file(saveFilename());
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+  if (!writeSaveGame(lines.join("\r\n") + "\r\n"))
   {
-    QMessageBox::warning(this, windowTitle(), "Could not save the game to " + file.fileName());
+    showMessage("Could not save the game to " + saveFilename());
     return;
   }
-  QTextStream out(&file);
-  for (const QString& line : lines) out << line << "\r\n";
-  file.close();
-  QMessageBox::information(this, windowTitle(), "Game Saved");
+  showMessage("Game Saved");
 }
 
 void QtPublicToiletManagerWidget::onLoadImageClick()
 {
   welkecel = -1;
 
-  QFile file(saveFilename());
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+  const QString text = readSaveGame();
+  if (text.isEmpty())
   {
-    QMessageBox::warning(this, windowTitle(), "There is no saved game");
+    showMessage("There is no saved game");
     return;
   }
   QStringList lines;
-  QTextStream in(&file);
-  while (!in.atEnd()) lines << in.readLine().trimmed();
+  for (const QString& line : text.split('\n')) lines << line.trimmed();
 
   const int n_numbers = 2 + 32 * 6 + maxmensen * 9 + 3 + 1 + 6 + 12 * 2 + 4 * 2 + 4 * 2 + 1 + 20 + 2;
   if (lines.size() <= n_numbers)
   {
-    QMessageBox::warning(this, windowTitle(), "The saved game is invalid");
+    showMessage("The saved game is invalid");
     return;
   }
 
@@ -1783,7 +1869,7 @@ void QtPublicToiletManagerWidget::onLoadImageClick()
   Rating = next();
   Upgrade = next();
   //controleregel laten zien
-  QMessageBox::information(this, windowTitle(), lines[R]);
+  showMessage(lines[R]);
 }
 
 //---------------------------------------------------------------------------

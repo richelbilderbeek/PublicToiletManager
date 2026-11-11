@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+  <file alias="sounds/flush_0.wav">flush_0.wav</file>
+  <file alias="sounds/flush_1.wav">flush_1.wav</file>
+  <file alias="sounds/flush_2.wav">flush_2.wav</file>
+</qresource>
+</RCC>

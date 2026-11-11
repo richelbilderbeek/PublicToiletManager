@@ -11,9 +11,25 @@ and was made by Joost van den Bogaart.
 
 ## Building the game
 
-The game was written in C++Builder 6 using the VCL
+The game was originally written in C++Builder 6 using the VCL
 (`PTM5Beta.bpr`).
-To build it, open `PTM5Beta.bpr` in C++Builder 6 and build the project.
+There is also a Qt version (`publictoiletmanager.pro`), which is built
+by continuous integration:
+
+- [The Linux build script](https://github.com/richelbilderbeek/publictoiletmanager/blob/master/.github/workflows/build_linux.yaml)
+  checks that the game builds on Linux
+- [The Windows build script](https://github.com/richelbilderbeek/publictoiletmanager/blob/master/.github/workflows/build_windows.yaml)
+  creates a zip file with the Windows executable,
+  which can be downloaded from the workflow run
+
+To build the Qt version locally:
+
+```bash
+mkdir build
+cd build
+qmake ../publictoiletmanager.pro
+make
+```
 
 ## License
 

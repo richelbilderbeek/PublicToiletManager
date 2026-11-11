@@ -27,3 +27,4 @@
 *.out
 *.app
 site/
+build/

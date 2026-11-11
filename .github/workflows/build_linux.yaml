@@ -26,7 +26,11 @@ jobs:
         run: |
           mkdir build
           cd build
-          # The game does not use OpenGL, so do not link to libGL,
-          # which is not installed and cannot be installed with apt-get
-          "$HOME/qt/$QT_VERSION/gcc_64/bin/qmake" ../publictoiletmanager.pro QMAKE_LIBS_OPENGL=
+          # Qt links to libGL. The runner has libGL.so.1, but not the libGL.so
+          # of libgl-dev, which cannot be installed, as the runner cannot
+          # reach the Ubuntu package servers. So link to libGL.so.1 directly
+          mkdir gl
+          ln -s "$(ldconfig -p | grep -m1 'libGL.so.1 ' | awk '{print $NF}')" gl/libGL.so
+          ls -l gl
+          "$HOME/qt/$QT_VERSION/gcc_64/bin/qmake" ../publictoiletmanager.pro "LIBS += -L$PWD/gl"
           make -j4

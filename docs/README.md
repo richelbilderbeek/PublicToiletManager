@@ -1,9 +1,8 @@
 # Public Toilet Manager
 
 Public Toilet Manager is a game in which you build and run
-a public toilet. It is one of
-[Richèl Bilderbeek's games](https://richelbilderbeek.github.io/games)
-and was made by Joost van den Bogaart.
+a public toilet made by Joost van den Bogaart.
+
 You can [play it in your browser](play.md).
 
 ![Public Toilet Manager logo](logo.png)

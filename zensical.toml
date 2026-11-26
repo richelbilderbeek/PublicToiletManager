@@ -2,7 +2,7 @@
 site_name = "Public Toilet Manager"
 site_url = "https://richelbilderbeek.github.io/publictoiletmanager/"
 repo_url = "https://github.com/richelbilderbeek/publictoiletmanager"
-edit_uri = "blob/master/docs/"
+edit_uri = "blob/main/docs/"
 
 nav = [
   { "Start" = "README.md"},

@@ -16,9 +16,9 @@ The game was originally written in C++Builder 6 using the VCL
 There is also a Qt version (`publictoiletmanager.pro`), which is built
 by continuous integration:
 
-- [The Linux build script](https://github.com/richelbilderbeek/publictoiletmanager/blob/master/.github/workflows/build_linux.yaml)
+- [The Linux build script](https://github.com/richelbilderbeek/publictoiletmanager/blob/main/.github/workflows/build_linux.yaml)
   checks that the game builds on Linux
-- [The Windows build script](https://github.com/richelbilderbeek/publictoiletmanager/blob/master/.github/workflows/build_windows.yaml)
+- [The Windows build script](https://github.com/richelbilderbeek/publictoiletmanager/blob/main/.github/workflows/build_windows.yaml)
   creates a zip file with the Windows executable,
   which can be downloaded from the workflow run
 
@@ -34,4 +34,4 @@ make
 ## License
 
 Public Toilet Manager is free software,
-licensed under the [GPL-3.0](https://github.com/richelbilderbeek/publictoiletmanager/blob/master/LICENSE).
+licensed under the [GPL-3.0](https://github.com/richelbilderbeek/publictoiletmanager/blob/main/LICENSE).

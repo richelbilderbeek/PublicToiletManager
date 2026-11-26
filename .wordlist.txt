@@ -1,8 +1,9 @@
 Bogaart
-GamePublicToiletManager
 GPL
+GamePublicToiletManager
 Joost
-png
 PTM
 PublicToiletManager
 VCL
+codecov
+png
